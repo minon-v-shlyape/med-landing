@@ -4,7 +4,7 @@ import requests
 import json
 
 app = Flask(__name__)
-CORS(app)  
+CORS(app)
 
 
 BOT_TOKEN = "8901154207:AAG0LRh3FMEqyla7mOwrgNrSxWZCecTRMDg"
@@ -73,9 +73,11 @@ def send_order():
         return jsonify({'error': str(e)}), 500
 
 
+from flask import send_from_directory  # Добавь в самом верху, где импорты
+
 @app.route('/', methods=['GET'])
 def home():
-    return "Сервер для лендинга работает! 🚀"
+    return send_from_directory('.', 'index.html')
 
 
 if __name__ == '__main__':
