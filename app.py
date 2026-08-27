@@ -79,6 +79,12 @@ from flask import send_from_directory  # Добавь в самом верху, 
 def home():
     return send_from_directory('.', 'index.html')
 
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
