@@ -1,18 +1,20 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import requests
 import json
+from datetime import datetime
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True, origins="*")
 
+# РАЗРЕШАЕМ ВСЕ ЗАПРОСЫ ОТОВСЮДУ
+CORS(app, origins="*")
 
+# 👇 ТВОЙ ТОКЕН
 BOT_TOKEN = "8901154207:AAG0LRh3FMEqyla7mOwrgNrSxWZCecTRMDg"
-CHAT_ID = "1549150337"
+CHAT_ID = 1549150337  # ТВОЙ ID (ЦИФРЫ)
 
 
 def send_to_telegram(name, phone, email, comment):
-    """Отправляет заявку в Telegram"""
     message = f"""
 🆕 НОВАЯ ЗАЯВКА!
 
@@ -21,7 +23,7 @@ def send_to_telegram(name, phone, email, comment):
 📧 Email: {email}
 📝 Комментарий: {comment}
 
-📅 {__import__('datetime').datetime.now().strftime('%d.%m.%Y %H:%M')}
+📅 {datetime.now().strftime('%d.%m.%Y %H:%M')}
     """
 
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -33,58 +35,44 @@ def send_to_telegram(name, phone, email, comment):
 
     try:
         response = requests.post(url, data=payload)
+        print(response.status_code, response.text)
         return response.status_code == 200
-    except:
+    except Exception as e:
+        print(e)
         return False
 
-
-@app.route('/send_order', methods=['POST'])
-def send_order():
-    try:
-        print("📩 Получен запрос!")
-        data = request.json
-        print(f"Данные: {data}")
-
-        name = data.get('name', '')
-        phone = data.get('phone', '')
-        email = data.get('email', '')
-        comment = data.get('comment', '')
-
-        print(f"Имя: {name}, Телефон: {phone}")
-
-
-        if not name or not phone:
-            print("❌ Ошибка: Имя или телефон пустые")
-            return jsonify({'error': 'Имя и телефон обязательны'}), 400
-
-        success = send_to_telegram(name, phone, email, comment)
-        print(f"Результат отправки в Telegram: {success}")
-
-        if success:
-            return jsonify({'status': 'success', 'message': 'Заявка отправлена'})
-        else:
-            print("❌ Ошибка отправки в Telegram")
-            return jsonify({'error': 'Ошибка отправки в Telegram'}), 500
-
-    except Exception as e:
-        print(f"❌ КРИТИЧЕСКАЯ ОШИБКА: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
-
-
-from flask import send_from_directory  # Добавь в самом верху, где импорты
 
 @app.route('/', methods=['GET'])
 def home():
     return send_from_directory('.', 'index.html')
 
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    return response
+
+@app.route('/send_order', methods=['POST', 'OPTIONS'])
+def send_order():
+    if request.method == 'OPTIONS':
+        return '', 200
+
+    try:
+        data = request.json
+        name = data.get('name', '')
+        phone = data.get('phone', '')
+        email = data.get('email', '')
+        comment = data.get('comment', '')
+
+        if not name or not phone:
+            return jsonify({'error': 'Имя и телефон обязательны'}), 400
+
+        success = send_to_telegram(name, phone, email, comment)
+
+        if success:
+            return jsonify({'status': 'success', 'message': 'Заявка отправлена!'})
+        else:
+            return jsonify({'error': 'Ошибка отправки в Telegram'}), 500
+
+    except Exception as e:
+        print(f"ОШИБКА: {e}")
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(host='0.0.0.0', port=5000)
