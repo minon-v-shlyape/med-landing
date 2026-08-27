@@ -4,7 +4,7 @@ import requests
 import json
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True, origins="*")
 
 
 BOT_TOKEN = "8901154207:AAG0LRh3FMEqyla7mOwrgNrSxWZCecTRMDg"
